@@ -525,7 +525,7 @@ var xp;
                 EditPostController.prototype.insertImage = function () {
                     var _this = this;
                     this.galleryPickerService.pickFile().then(function (file) {
-                        _this.editor.insert('![image](' + file.replace('./src', '') + ')');
+                        _this.editor.insert('![image](' + file.replace('/src', '') + ')');
                     });
                 };
                 EditPostController.prototype.updatePost = function () {

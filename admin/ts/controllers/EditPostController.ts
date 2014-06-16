@@ -66,7 +66,7 @@ module xp.mdposteditor.controllers
 		{
 
 			this.galleryPickerService.pickFile().then((file)=>{
-				this.editor.insert('![image]('+file.replace('./src','')+')');
+				this.editor.insert('![image]('+file.replace('/src','')+')');
 			});
 
 		}
