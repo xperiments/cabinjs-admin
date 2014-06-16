@@ -1,0 +1,131 @@
+@font-face {
+	font-family: 'Oxygen';
+	src: url('fonts/oxygen-regular-webfont.eot');
+	src: url('fonts/oxygen-regular-webfont.eot?#iefix') format('embedded-opentype'),
+	url('fonts/oxygen-regular-webfont.woff') format('woff'),
+	url('fonts/oxygen-regular-webfont.ttf') format('truetype'),
+	url('fonts/oxygen-regular-webfont.svg#oxygenregular') format('svg');
+	font-weight: normal;
+	font-style: normal;
+
+}
+
+.ace_editor
+{
+	height:800px;
+}
+
+/*    */
+.xp-media-thumbs-container
+{
+	list-style-type: none;
+}
+.xp-media-thumbs-item
+{
+	float: left;
+}
+
+.xp-media-thumbs-image
+{
+	width:100px;
+	height:100px;
+	overflow:hidden;
+}
+
+.xp-content-header
+{
+	height:80px;
+	line-height: 80px;
+	font-size: 16px;
+	border-bottom: 1px solid #EEE;
+	margin-bottom: 10px;
+}
+.xp-content-header .btn
+{
+	margin-top: 15px;
+	line-height: 30px;
+}
+.xp-editor-buttons
+{
+	margin-bottom: 10px;
+}
+
+.xp-dialog-gallery
+{
+	width:80%;
+	height: calc(100% - 60px);
+}
+.xp-dialog-gallery-content
+{
+	height: 100%;
+}
+.xp-dialog-gallery-body
+{
+	height: calc(100% - 150px);
+	overflow-y: scroll;
+	padding: 20px 40px 20px 40px;
+}
+.xp-dialog-gallery-folder-container
+{
+	position: absolute;
+	left: 15px;
+	top: 0;
+	right: 15px;
+	bottom: 0;
+	text-align: center;
+	border:1px dashed #AAA;
+	border-radius: 1em;
+
+}
+.xp-dialog-gallery-folder
+{
+	display: block;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	height: 5em;
+	width: 5em;
+	margin-left: -2.5em;
+	margin-top: -2.5em;
+}
+body,
+code,
+kbd,
+pre,
+samp
+{
+	font-family: "Oxygen", Helvetica, Arial, sans-serif !important;
+}
+
+
+.modal
+{
+	display: block;
+	background-color: rgba(0,0,0,.8);
+
+}
+
+.xp-gallery-thumbnail
+{
+	background-size: cover !important;
+	background-position: 50% 50%;
+	background-repeat:no-repeat;
+}
+
+#wrapper {
+	width: 100%;
+	height: auto;
+}
+
+.xp-admin-title
+{
+	font-size: 30px;
+}
+.xp-admin-title--icon
+{
+	font-size: 75px;
+}
+.xp-admin--page
+{
+	margin-top:40px;
+}

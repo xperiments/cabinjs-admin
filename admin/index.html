@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<title>CabinAdmin</title>
+
+	<!-- Core CSS -->
+	<link rel="stylesheet" href="/admin/styles/bootstrap.min.css">
+	<link rel="stylesheet" href="/admin/styles/font-awesome/css/font-awesome.min.css">
+
+	<!-- cabinjs-admin CSS -->
+	<link href="/admin/styles/sb-admin.css" rel="stylesheet">
+	<link href="/admin/styles/md-admin.css" rel="stylesheet">
+
+	<script type="text/javascript" src="/admin/lib/ace-builds/src-min-noconflict/ace.js"></script>
+	<script type="text/javascript" src="/admin/lib/showdown/compressed/showdown.js"></script>
+	<script type="text/javascript" src="/admin/lib/hanson/hanson.js"></script>
+
+	<script type="text/javascript" src="/admin/lib/angular/angular.js"></script>
+	<script type="text/javascript" src="/admin/lib/angular-ui-ace/ui-ace.js"></script>
+	<script type="text/javascript" src="/admin/lib/angular-route/angular-route.js"></script>
+	<script type="text/javascript" src="/admin/lib/angular-sanitize/angular-sanitize.js"></script>
+	<script type="text/javascript" src="/admin/lib/angular-markdown-directive/markdown.js"></script>
+
+
+	<!-- flickr 2c6a2d4c00106f6f3fe64dcfa433c9ca 3655b6ef07e92f60 -->
+	<!-- http://jsfiddle.net/lsiv568/fsfPe/10/ -->
+	<script src="/admin/js/app.js"></script>
+
+</head>
+
+<body ng-app="mdposteditor">
+
+<div id="wrapper">
+	<div id="page-wrapper">
+		<!-- NAVIGATION -->
+		<nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="margin-bottom: 0; min-height: 0px;">
+			<div class="navbar-default navbar-static-side" role="navigation" style="margin-top:70px;">
+				<div class="sidebar-collapse">
+					<ul class="nav" id="side-menu">
+						<li class="text-center">
+							<a href="#/"><i class="fa-4x fa fa-list"></i></a>
+						</li>
+						<li  class="text-center">
+							<a href="#/edit/::new"><i class="fa-4x fa fa-plus"></i></a>
+						</li>
+					</ul>
+
+				</div>
+
+			</div>
+		</nav>
+		<!-- VIEWS -->
+		<div ng-view></div>
+	</div>
+</div>
+</body>
+
+</html>

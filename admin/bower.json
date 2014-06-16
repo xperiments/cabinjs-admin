@@ -1,0 +1,25 @@
+{
+  "name": "admin-src",
+  "version": "0.0.1",
+  "authors": [
+    "Pedro Casaubon <xperiments@gmail.com>"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular-markdown-directive": "~0.3.0",
+    "angular-ui-ace": "~0.1.1",
+    "angular-route": "~1.2.16",
+    "hanson": "https://github.com/timjansen/hanson.git",
+    "angular-sanitize": "~1.2.16",
+    "ace-builds": "~1.1.3",
+    "angular": "~1.2.18"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "hanson",
+  "homepage": "https://github.com/timjansen/hanson",
+  "_release": "9bb286d9c8",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "9bb286d9c8926acfd60024409ecb45ef376f757d"
+  },
+  "_source": "https://github.com/timjansen/hanson.git",
+  "_target": "*",
+  "_originalSource": "https://github.com/timjansen/hanson.git",
+  "_direct": true
+}

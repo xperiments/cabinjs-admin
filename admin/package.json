@@ -1,0 +1,15 @@
+{
+  "name": "cabinjs-admin-public",
+  "version": "0.0.1",
+  "description": "CabinJS simple CMS",
+  "author": "Pedro Casaubon",
+  "license": "MIT",
+  "devDependencies": {
+	  "grunt": "~0.4.5",
+	  "grunt-ts": "~1.11.2",
+	  "load-grunt-tasks": "^0.4.0",
+  },
+  "private":true
+}
+
+

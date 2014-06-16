@@ -1,0 +1,49 @@
+
+<!-- POSTS -->
+<div class="row">
+	<div class="col-lg-12 xp-admin--page">
+		<!-- /.panel -->
+		<div class="panel panel-default">
+			<div class="panel-heading xp-admin-title">
+				<i class="fa fa-file-text-o fa-4x xp-admin-title--icon"></i> <span>Posts</span>
+			</div>
+			<!-- /.panel-heading -->
+			<div class="panel-body">
+				<div class="row">
+					<div class="col-lg-12">
+						<div class="table-responsive">
+							<table class="table">
+								<thead>
+								<tr>
+									<th><i class="fa fa-clock-o"></i> DATE </th>
+									<th><i class="fa fa-text-width"></i> TITLE</th>
+									<th><i class="fa fa-tags"></i> CATEGORIES</th>
+									<th><i class="fa fa-align-justify"></i> DESCRIPTION</th>
+									<th></th>
+								</tr>
+								</thead>
+								<tbody>
+								<tr ng-repeat="(key,post) in list.posts | toArray | orderBy:'-date' ">
+									<td class="text-success">{{post.date}}</td>
+									<td>{{post.title}}</td>
+									<td>{{post.categories.join(', ')}}</td>
+									<td>{{post.description}}</td>
+									<td style="text-align: right">
+										<a ng-href="#/edit/{{post.file.replace('./posts/','')}}" type="button" class="btn btn-success btn-circle btn-lg"><i class="fa fa-pencil"></i></a>
+										<a type="button" class="btn btn-danger btn-circle btn-lg" ng-click="list.deletePost( post.file )"><i class="fa fa-trash-o"></i></a>
+									</td>
+								</tr>
+
+								</tbody>
+							</table>
+						</div>
+						<!-- /.table-responsive -->
+					</div>
+				</div>
+				<!-- /.row -->
+			</div>
+			<!-- /.panel-body -->
+		</div>
+		<!-- /.panel -->
+	</div>
+</div>

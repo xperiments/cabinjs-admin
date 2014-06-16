@@ -1,0 +1,87 @@
+<md-gallery></md-gallery>
+<!-- EDIT POST -->
+
+<div class="row">
+	<div class="col-lg-12 xp-admin--page">
+		<!-- /.panel -->
+		<div class="panel panel-default">
+			<div class="panel-heading xp-admin-title">
+				<i class="fa fa-pencil-square-o fa-4x xp-admin-title--icon"></i> <span>Edit Posts</span>
+				<button class="btn btn-success btn-circle btn-xl fa fa-download pull-right" ng-click="edit.updatePost()" ng-disabled="!form.$valid"></button>
+			</div>
+			<form name="form" novalidate style="padding:20px;">
+				<div class="row">
+					<div class="col-xs-12 xp-editor-buttons">
+						<div class="btn btn-success btn-circle" ng-click="edit.togglePreview()" ><i class="fa" ng-class="{'fa-eye':edit.previewVisible,'fa-code':!edit.previewVisible}"></i></div>
+						<div class="btn btn-success btn-circle" ng-click="edit.setStyle('b')" ><i class="fa fa-bold"></i></div>
+						<div class="btn btn-success btn-circle" ng-click="edit.setStyle('i')" ><i class="fa fa-italic"></i></div>
+						<div class="btn btn-success btn-circle" ng-click="edit.setStyle('q')" ><i class="fa fa-quote-left"></i></div>
+						<div class="btn btn-success btn-circle" ng-click="edit.setStyle('o')" ><i class="fa fa-list-ol"></i></div>
+						<div class="btn btn-success btn-circle" ng-click="edit.setStyle('u')" ><i class="fa fa-list-ul"></i></div>
+						<div class="btn btn-success btn-circle" ng-click="edit.setStyle('h')" ><i class="fa fa-ellipsis-h"></i></div>
+						<div class="btn btn-success btn-circle" ng-click="edit.insertImage()" ><i class="fa fa-picture-o"></i></div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-xs-8">
+						<div ng-show="!edit.previewVisible" ui-ace="{showGutter: true, mode:'markdown', theme:'tomorrow_night',onLoad:aceLoaded}" ng-model="edit.post.content"></div>
+						<div ng-show="edit.previewVisible" btf-markdown="edit.post.content" class="markdown" style="overflow: scroll; height:800px; padding: 40px;border: 1px solid #ddd;"></div>
+					</div>
+					<div class="col-xs-4">
+						<!-- /.panel -->
+						<div class="panel panel-default">
+							<div class="panel-heading">
+								<i class="fa fa-bookmark-o"></i> Meta
+								<div class="pull-right"><!-- <input name="published" type="checkbox" value=""> Published --></div>
+							</div>
+							<!-- /.panel-heading -->
+							<div class="panel-body">
+								<div class="row">
+									<div class="col-xs-12">
+										<form name="form">
+											<div class="form-group" ng-class="{'has-error':form.date.$error.required}">
+												<label>Date</label>
+												<input name="date" class="form-control" placeholder="YYYY-MM-DD	" ng-model="edit.post.date" type="text" required>
+											</div>
+											<div class="form-group" ng-class="{'has-error':form.title.$error.required}">
+												<label>Title</label>
+												<input name="title" class="form-control" placeholder="Post Title" ng-model="edit.post.title" required>
+											</div>
+											<div class="form-group">
+												<label>Description</label>
+												<textarea name="description" class="form-control" rows="3" ng-model="edit.post.description"></textarea>
+											</div>
+											<div class="form-group">
+												<label>Categories</label>
+												<input class="form-control" placeholder="Categories" ng-model="edit.post.categories" ng-list>
+											</div>
+										</form>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="panel panel-default">
+							<div class="panel-heading">
+								<i class="fa fa-picture-o"></i> Post Header Image
+							</div>
+							<!-- /.panel-heading -->
+							<div class="panel-body">
+								<div class="row">
+									<div class="col-xs-2 text-center">
+										<a style="margin-bottom:10px" ng-click="edit.pickHeader()" class="btn btn-info btn-circle btn-lg fa fa-folder-open xp-btn-lg-icon"></a>
+										<a ng-show="edit.hasHeadImage" style="margin-bottom:10px" ng-click="edit.clearHeader()" class="btn btn-danger btn-circle btn-lg fa fa-flash xp-btn-lg-icon"></a>
+									</div>
+									<div class="col-xs-10">
+										<div ng-show="edit.hasHeadImage" class="thumbnail">
+											<div ng-cloak class="xp-gallery-thumbnail" ng-style="{'background-image':'url('+edit.post.image+')' }" style="height:250px;"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="100%" height="100%"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
