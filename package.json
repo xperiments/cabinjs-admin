@@ -1,11 +1,13 @@
 {
-  "name": "cabinjs-admin",
-  "version": "0.0.1",
-  "description": "CabinJS simple CMS",
-  "main": "cabinjs-admin.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Pedro Casaubon",
-  "license": "MIT"
+	"name": "cabinjs-admin",
+	"version": "0.0.1",
+	"description": "Simple CabinJS Blog Admin",
+	"main": "cabinjs-admin.js",
+	"repository":
+	{
+		"type": "git",
+		"url": "git://github.com/xperiments/cabinjs-admin.git"
+	},
+	"author": "Pedro Casaubon <xperiments@gmail.com>",
+	"license": "MIT"
 }
