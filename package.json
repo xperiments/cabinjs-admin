@@ -8,6 +8,6 @@
 		"type": "git",
 		"url": "git://github.com/xperiments/cabinjs-admin.git"
 	},
-	"author": "Pedro Casaubon <xperiments@gmail.com>",
+	"author": "Pedro Casaubon",
 	"license": "MIT"
 }
