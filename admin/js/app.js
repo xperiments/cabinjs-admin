@@ -509,9 +509,8 @@ var xp;
                     this.markdown = "";
                     this.previewVisible = false;
                     this.hasHeadImage = false;
-                    var self = this;
                     $scope.aceLoaded = function (editor) {
-                        self.editor = editor;
+                        _this.editor = editor;
                     };
                     postLoader.load($routeParams.id).then(function (response) {
                         _this.post = new Post();
@@ -525,7 +524,10 @@ var xp;
                 EditPostController.prototype.insertImage = function () {
                     var _this = this;
                     this.galleryPickerService.pickFile().then(function (file) {
-                        _this.editor.insert('![image](' + file.replace('/src', '') + ')');
+                        _this.editor.insert('\r\n');
+                        _this.editor.insert('![image](' + file.replace('/src', '') + ') ');
+                        _this.editor.insert('\r\n');
+                        _this.updateEditor();
                     });
                 };
                 EditPostController.prototype.updatePost = function () {
@@ -534,7 +536,9 @@ var xp;
                         return _this.$location.path("/");
                     });
                 };
-
+                EditPostController.prototype.updateEditor = function () {
+                    this.post.content = this.editor.getSession().getValue();
+                };
                 EditPostController.prototype.setStyle = function (style) {
                     var selection = this.getSelection();
                     var result = "";
@@ -559,6 +563,7 @@ var xp;
                             break;
                     }
                     this.editor.insert(result);
+                    this.updateEditor();
                 };
 
                 EditPostController.prototype.pickHeader = function () {

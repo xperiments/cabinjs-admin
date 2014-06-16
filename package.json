@@ -1,6 +1,6 @@
 {
 	"name": "cabinjs-admin",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "Simple CabinJS Blog Admin",
 	"main": "cabinjs-admin.js",
 	"repository":

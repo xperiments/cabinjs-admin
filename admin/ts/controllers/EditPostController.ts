@@ -45,10 +45,9 @@ module xp.mdposteditor.controllers
 
 		)
 		{
-			var self = this;
-			$scope.aceLoaded = function(editor:AceAjax.Editor)
+			$scope.aceLoaded = (editor:AceAjax.Editor)=>
 			{
-				self.editor = editor;
+				this.editor = editor;
 			};
 			postLoader.load( $routeParams.id ).then(( response:IPost )=>{
 				this.post = new Post();
@@ -66,7 +65,10 @@ module xp.mdposteditor.controllers
 		{
 
 			this.galleryPickerService.pickFile().then((file)=>{
-				this.editor.insert('![image]('+file.replace('/src','')+')');
+				this.editor.insert('\r\n');
+				this.editor.insert('![image]('+file.replace('/src','')+') ');
+				this.editor.insert('\r\n');
+				this.updateEditor();
 			});
 
 		}
@@ -74,7 +76,10 @@ module xp.mdposteditor.controllers
 		{
 			this.postWriter.updatePost( this.post ).then(( )=> this.$location.path( "/" ));
 		}
-
+		updateEditor()
+		{
+			this.post.content = this.editor.getSession().getValue();
+		}
 		setStyle( style:string )
 		{
 			var selection:string = this.getSelection();
@@ -101,6 +106,7 @@ module xp.mdposteditor.controllers
 					break;
 			}
 			this.editor.insert(result);
+			this.updateEditor();
 		}
 
 		pickHeader()

@@ -45,5 +45,6 @@ Navigate to http://localhost:5455/admin
 ## Todo
 
 * Testing
+* Add option to save as draft
 * Configurable post metadata ( add custom metadata & reflet it on the form )
 
