@@ -344,7 +344,7 @@ function middleware(connect, options) {
 
 	var middlewares = [
 
-		connect().use(connect.bodyParser({ uploadDir: __dirname+'/.tmp' })),
+		connect().use(connect.bodyParser({ uploadDir: __dirname+'/tmp' })),
 		connect().use("/admin", connect.static(__dirname + "/admin")),
 		connect().use('/upload', upload),
 		connect().use('/listImages', listImages),

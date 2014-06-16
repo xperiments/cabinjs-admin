@@ -1,3 +1,4 @@
 .idea
 admin/node_modules
 admin/bower_components
+npm-debug.log
