@@ -569,7 +569,7 @@ var xp;
                 EditPostController.prototype.pickHeader = function () {
                     var _this = this;
                     this.galleryPickerService.pickFile().then(function (file) {
-                        _this.post.image = file;
+                        _this.post.image = file.substr(4);
                         _this.hasHeadImage = true;
                     });
                 };
@@ -995,6 +995,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
+
 var xp;
 (function (xp) {
     (function (mdposteditor) {
@@ -1006,11 +1007,25 @@ var xp;
                 _super.apply(this, arguments);
             }
             App.prototype.boot = function () {
+                this.disableLiveReload();
+
                 this.wireServices(xp.mdposteditor.services);
                 this.wireControllers(xp.mdposteditor.controllers);
                 this.wireDirectives(xp.mdposteditor.directives);
                 this.wireFilters(xp.mdposteditor.filters);
                 this.config(xp.mdposteditor.config);
+            };
+
+            App.prototype.disableLiveReload = function () {
+                if (window.LiveReload) {
+                    window.LiveReload.performReload = function (message) {
+                    };
+                } else {
+                    setTimeout(function () {
+                        return window.LiveReload.performReload = function (message) {
+                        };
+                    }, 2000);
+                }
             };
             return App;
         })(AppBase);
