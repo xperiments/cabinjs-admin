@@ -112,7 +112,7 @@ module xp.mdposteditor.controllers
 		pickHeader()
 		{
 			this.galleryPickerService.pickFile().then((file)=>{
-				this.post.image = file;
+				this.post.image = file.substr(4);
 				this.hasHeadImage = true;
 			});
 		}
