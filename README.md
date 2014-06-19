@@ -45,6 +45,7 @@ Navigate to http://localhost:5455/admin
 ## Todo
 
 * Testing
-* Add option to save as draft
+* ~~Add option to save as draft~~
+* ~~Confirm delete post~~
 * Configurable post metadata ( add custom metadata & reflet it on the form )
 
