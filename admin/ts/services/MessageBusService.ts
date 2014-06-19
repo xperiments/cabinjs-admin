@@ -19,7 +19,7 @@ module xp.mdposteditor.services
 	//https://gist.github.com/floatingmonkey/3384419
 	//https://gist.github.com/turtlemonvh/10686980
 	import DI = xp.mdposteditor.DI;
-	export class MessageBus
+	export class MessageBusService
 	{
 		static $inject=[DI.$rootScope];
 		constructor(private $rootScope:ng.IScope){}

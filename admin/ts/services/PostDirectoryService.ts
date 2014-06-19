@@ -7,7 +7,7 @@ module xp.mdposteditor.services
 {
 	import IPostCollection = xp.mdposteditor.models.IPostCollection;
 	import DI = xp.mdposteditor.DI;
-	export class PostDirectory
+	export class PostDirectoryService
 	{
 		static $inject:string[] = [DI.$http];
 		posts:IPostCollection = {};

@@ -18,7 +18,7 @@
 									<th><i class="fa fa-clock-o"></i> DATE </th>
 									<th><i class="fa fa-text-width"></i> TITLE</th>
 									<th><i class="fa fa-tags"></i> CATEGORIES</th>
-									<th><i class="fa fa-align-justify"></i> DESCRIPTION</th>
+									<th><i class="fa fa-align-justify"></i> STATUS</th>
 									<th></th>
 								</tr>
 								</thead>
@@ -27,7 +27,10 @@
 									<td class="text-success">{{post.date}}</td>
 									<td>{{post.title}}</td>
 									<td>{{post.categories.join(', ')}}</td>
-									<td>{{post.description}}</td>
+									<td>
+										<span ng-if="post.published" class="label label-success">Published</span>
+										<span ng-if="!post.published" class="label label-warning">Draft</span>
+									</td>
 									<td style="text-align: right">
 										<a ng-href="#/edit/{{post.file.replace('./posts/','')}}" type="button" class="btn btn-success btn-circle btn-lg"><i class="fa fa-pencil"></i></a>
 										<a type="button" class="btn btn-danger btn-circle btn-lg" ng-click="list.deletePost( post.file )"><i class="fa fa-trash-o"></i></a>

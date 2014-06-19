@@ -52,8 +52,27 @@ module io.xperiments.angularjs
 				this.app.config( package[clsName] );
 			});
 		}
+		public constants( obj:{[ name:string]:any} )
+		{
+			this.app.constant( obj );
+		}
 	}
 
+	export class StaticEvent
+	{
+		static init( EventClass:StaticEvent )
+		{
+			Object.keys( EventClass ).forEach(( key:string )=>{
+				EventClass[key] = [ StaticEvent.className( EventClass ), key ].join('.')
+			})
+		}
+		static className( cls:any ):string
+		{
+			var funcNameRegex = /function (.{1,})\(/;
+			var results = (funcNameRegex).exec(cls.toString());
+			return (results && results.length > 1) ? results[1] : "";
+		}
+	}
 
 }
 

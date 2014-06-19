@@ -1,11 +1,13 @@
 ///<reference path="../reference.ts"/>
 module xp.mdposteditor.controllers
 {
-	import IMediaResource = xp.mdposteditor.services.IMediaResource;
-	import FileUploader = xp.mdposteditor.services.FileUploader;
-	import Media = xp.mdposteditor.services.Media;
-	import MessageBus = xp.mdposteditor.services.MessageBus;
-	import DI = xp.mdposteditor.DI;
+	import IMediaResource 		= xp.mdposteditor.services.IMediaResource;
+	import FileService 			= xp.mdposteditor.services.FileService;
+	import MediaService 		= xp.mdposteditor.services.MediaService;
+	import MessageBusService 	= xp.mdposteditor.services.MessageBusService;
+	import GalleryPickerService = xp.mdposteditor.services.GalleryPickerService;
+	import GalleryPickerEvent	= xp.mdposteditor.services.GalleryPickerEvent;
+	import StaticEvent 			= io.xperiments.angularjs.StaticEvent;
 
 	export interface IGalleryDropObject
 	{
@@ -18,13 +20,12 @@ module xp.mdposteditor.controllers
 		[
 			 DI.$scope
 			,DI.$timeout
-			,DI.Media
-			,DI.MessageBus
-			,DI.FileUploader
+			,DI.MediaService
+			,DI.MessageBusService
+			,DI.FileService
+			,DI.GalleryPickerService
 		];
-		static PICK:string = "GalleryPickerController.PICK";
-		static CLOSE:string = "GalleryPickerController.CLOSE";
-		static SELECT:string = "GalleryPickerController.SELECT";
+
 
 
 		public visible:boolean = false;
@@ -36,19 +37,18 @@ module xp.mdposteditor.controllers
 		public uploadImage:string;
 		public uploadImageName:string;
 		public onSelect:(name:string)=>void;
-		public currentDeferred:ng.IDeferred<any>;
 		public lastFolder:IMediaResource;
 		constructor(
 			 private $scope:ng.IScope
 			,private $timeout:ng.ITimeoutService
-			,private media:Media
-			,private msgBus:MessageBus
-			,private fileUploader:FileUploader
+			,private mediaService:MediaService
+			,private messageBusService:MessageBusService
+			,private fileService:FileService
+			,private galleryPickerService:GalleryPickerService
 		)
 		{
-			this.msgBus.on(GalleryPickerController.PICK, ( event, deferred:ng.IDeferred<any> )=>{
+			this.messageBusService.on(GalleryPickerEvent.PICK, ( )=>{
 
-				this.currentDeferred = deferred;
 				this.toggleGalleryPicker( );
 
 			}, $scope );
@@ -65,7 +65,7 @@ module xp.mdposteditor.controllers
 		}
 		public close()
 		{
-			this.currentDeferred.reject();
+			this.galleryPickerService.reject();
 		}
 		public showFolder( file:IMediaResource )
 		{
@@ -77,7 +77,7 @@ module xp.mdposteditor.controllers
 		public selectImage( image:string )
 		{
 			this.toggleGalleryPicker();
-			this.currentDeferred.resolve( image );
+			this.galleryPickerService.resolve( image );
 		}
 
 		public folderUp()
@@ -93,26 +93,26 @@ module xp.mdposteditor.controllers
 		{
 			if( dropObject.textDrop )
 			{
-				this.fileUploader.downloadFile(dropObject.textDrop, './src/images/' + this.getRelativeUploadPath()+ this.hashCode( dropObject.textDrop ) )
+				this.fileService.downloadFile(dropObject.textDrop, './src/images/' + this.getRelativeUploadPath()+ this.hashCode( dropObject.textDrop ) )
 					.then((data)=>
 					{
-						this.$timeout( ()=>{ this.toggleGalleryPicker(); this.currentDeferred.resolve(data.downloadedImage);},1000);
+						this.$timeout( ()=>{ this.toggleGalleryPicker(); this.galleryPickerService.resolve(data.downloadedImage);},1000);
 					});
 			}
 			else
 			{
-				this.fileUploader.uploadFilesToUrl('/upload', [{ contents: dropObject.file, name: dropObject.file.name }], './src/images/' + this.getRelativeUploadPath())
+				this.fileService.uploadFilesToUrl('/upload', [{ contents: dropObject.file, name: dropObject.file.name }], './src/images/' + this.getRelativeUploadPath())
 					.then((data)=>
 					{
 						this.toggleGalleryPicker();
-						this.currentDeferred.resolve(data.uploadedFiles[0].path);
+						this.galleryPickerService.resolve(data.uploadedFiles[0].path);
 					});
 			}
 		}
 
 		private updateMedia( ):ng.IPromise<any>
 		{
-			return this.media.listMedia().then( ( data:IMediaResource )=>this.initFolder(data) );
+			return this.mediaService.listMedia().then( ( data:IMediaResource )=>this.initFolder(data) );
 		}
 
 		private initFolder( data:IMediaResource )

@@ -11,15 +11,16 @@ module xp.mdposteditor.services
 		contents:any;
 		name:string;
 	}
-	export class FileUploader
+	export class FileService
 	{
 		static $inject = [DI.$http];
 		constructor( private $http:ng.IHttpService ){}
-		uploadFilesToUrl( uploadUrl:string, contents:IFileUploaderFile[], uploadDir:string, type:string = "image" ):ng.IPromise<any>
+		uploadFilesToUrl( uploadUrl:string, contents:IFileUploaderFile[], uploadDir:string, type:string = "image", postPublished:string = "0" ):ng.IPromise<any>
 		{
 			var fd:FormData = new FormData();
 			fd.append('uploadDir', uploadDir);
 			fd.append('type', type);
+			fd.append('postPublished', postPublished);
 			contents.forEach(( file:IFileUploaderFile )=>{
 				fd.append("uploadFiles[]", file.contents, file.name );
 			});
@@ -28,8 +29,6 @@ module xp.mdposteditor.services
 				transformRequest: angular.identity,
 				headers: {'Content-Type': undefined}
 			}).then( (data)=>{
-
-				console.log( 'cccc',data )
 				return data.data;
 			})
 		}
@@ -43,8 +42,6 @@ module xp.mdposteditor.services
 				transformRequest: angular.identity,
 				headers: {'Content-Type': undefined}
 			} ).then( (data)=>{
-
-				console.log( 'deleted',data )
 				return data.data;
 			})
 		}
@@ -52,8 +49,6 @@ module xp.mdposteditor.services
 		{
 
 			return this.$http.get('/downloadFile', { params:{ src:source, dst:dest } } ).then( (data)=>{
-
-				console.log( 'downloaded image',data )
 				return data.data;
 			})
 		}

@@ -2,7 +2,6 @@ var fs = require('fs');
 var http = require('http');
 var path = require('path');
 
-
 /*
  * hanson.js - Parser library for HanSON
  *
@@ -138,7 +137,7 @@ function forAllFiles(root, fileCb, doneCb) {
 }
 
 /*
-	connect query variable helper
+ connect query variable helper
  */
 function getQueryVariable(query, variable) {
 	var vars = query.split('&');
@@ -157,7 +156,7 @@ function getQueryVariable(query, variable) {
  Parses markdown post and returns an object with
  all found properties defined in the post's head
  */
-function getPostMeta( file, content  )
+function getPostMeta( file, content, baseFile  )
 {
 
 	var curlyNest = 1;
@@ -191,6 +190,7 @@ function getPostMeta( file, content  )
 	var metadata = hanson.parse( content.substr( 0,currentIndex ) );
 	var content = content.substr( currentIndex+1 );
 	metadata['file'] = file;
+	metadata['published'] = baseFile[0]!="_";
 	return metadata;
 }
 
@@ -220,7 +220,7 @@ function dirTree( filename , replace ) {
 }
 
 /*
-	Downloads an online resource and tries to determine the mimetype.
+ Downloads an online resource and tries to determine the mimetype.
  */
 var download = function(url, dest, res ) {
 
@@ -242,11 +242,11 @@ var download = function(url, dest, res ) {
 		}
 		dest = dest + ext;
 		var file = fs.createWriteStream(dest);
-			file.on('finish', function() {
-				file.close();  // close() is async, call cb after close completes.
-				res.setHeader('Content-Type', 'application/json');
-				res.end(JSON.stringify({downloadedImage: dest }));
-			});
+		file.on('finish', function() {
+			file['close']();  // close() is async, call cb after close completes.
+			res.setHeader('Content-Type', 'application/json');
+			res.end(JSON.stringify({downloadedImage: dest }));
+		});
 
 		response.pipe(file);
 
@@ -257,7 +257,7 @@ var download = function(url, dest, res ) {
 };
 
 /* 
-	Uploads a post or image to the system
+ Uploads a post or image to the system
  */
 function upload(req, res, next)
 {
@@ -269,11 +269,32 @@ function upload(req, res, next)
 
 	files.forEach( function( file )
 	{
-		var uploadedFile = cabinUploadDir + file.name;
-		fs.renameSync(file.path, uploadedFile );
+		var destinationFile = cabinUploadDir + file.name;
+
+		if( type== "post" )
+		{
+			var oldFile;
+			var postPublished = req.body.postPublished == "1";
+			var normalizedFilename = file.name[0] =="_" ? file.name.substr(1):file.name;
+
+			if( postPublished )
+			{
+				oldFile = cabinUploadDir + '_' + normalizedFilename;
+				if ( fs.existsSync(oldFile) ) fs.unlinkSync(oldFile);
+			}
+			else
+			{
+				oldFile = cabinUploadDir + normalizedFilename;
+				if ( fs.existsSync(oldFile) ) fs.unlinkSync(oldFile);
+				destinationFile = cabinUploadDir + '_' + file.name;
+			}
+			fs.renameSync( file.path, destinationFile );
+		}
+
 		if( type == "image" )
 		{
-			fs.createReadStream(uploadedFile).pipe(fs.createWriteStream(uploadedFile.replace('./src','./dist')));
+			fs.renameSync(file.path, destinationFile );
+			fs.createReadStream(destinationFile).pipe(fs.createWriteStream(destinationFile.replace('./src','./dist')));
 		}
 	});
 	res.setHeader('Content-Type', 'application/json');
@@ -313,13 +334,13 @@ function listPosts(req, res, next)
 				fs.stat(file, function( err, stats ){
 					var ofile = file;
 					file = path.basename(file);
-					postFiles[file] = getPostMeta( ofile,content );
+					postFiles[file] = getPostMeta( ofile,content,file );
 					next();
 				});
 			});
 
 		},
-		function (err) { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(  err ? {"error":error}: postFiles ), null, 4 ); });
+		function (err) { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(  err ? { "error":err }: postFiles ), null, 4 ); });
 }
 
 /* DELETE FILE */
@@ -354,7 +375,7 @@ function middleware(connect, options) {
 	];
 
 	var baseStaticDirs = [
-		 cabinDirectory+'/dist'
+			cabinDirectory+'/dist'
 		,cabinDirectory+'/src/images'
 		,cabinDirectory+'/'
 	];

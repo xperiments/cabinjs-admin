@@ -3,6 +3,7 @@
 interface Window
 {
 	LiveReload:any;
+	HanSON:any;
 }
 
 module xp.mdposteditor
@@ -25,6 +26,7 @@ module xp.mdposteditor
 			this.wireDirectives( xp.mdposteditor.directives );
 			this.wireFilters( xp.mdposteditor.filters );
 			this.config( xp.mdposteditor.config );
+			this.constants({'HanSON':window.HanSON });
 		}
 		/* TODO Remove this "hack" to disable LiveReload on Admin Pages */
 		disableLiveReload()

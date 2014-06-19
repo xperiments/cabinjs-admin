@@ -22,13 +22,14 @@ module xp.mdposteditor
 		static markdown:string 				= "btford.markdown";
 
 		static FlickrCommons:string			= "FlickrCommons";
-		static PostLoader:string			= "PostLoader";
-		static PostWriter:string			= "PostWriter";
-		static PostDirectory:string			= "PostDirectory";
-		static Media:string					= "Media";
-		static MessageBus:string			= "MessageBus";
+		static PostLoaderService:string		= "PostLoaderService";
+		static PostWriterService:string		= "PostWriterService";
+		static PostDirectoryService:string	= "PostDirectoryService";
+		static MediaService:string			= "MediaService";
+		static MessageBusService:string		= "MessageBusService";
+		static ModalService:string			= "ModalService";
 		static HanSON:string				= "HanSON";
-		static FileUploader:string			= "FileUploader";
+		static FileService:string			= "FileService";
 		static GalleryPickerService:string 	= "GalleryPickerService";
 
 	}

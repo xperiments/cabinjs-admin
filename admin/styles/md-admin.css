@@ -114,8 +114,15 @@ samp
 
 #wrapper {
 	width: 100%;
-	height: auto;
+	height: 100%;
 }
+
+#page-wrapper {
+
+	display: inline-table;
+	width: calc(100% - 120px);
+}
+
 
 .xp-admin-title
 {

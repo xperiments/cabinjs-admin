@@ -38,9 +38,29 @@ var io;
                         _this.app.config(package[clsName]);
                     });
                 };
+                AppBase.prototype.constants = function (obj) {
+                    this.app.constant(obj);
+                };
                 return AppBase;
             })();
             angularjs.AppBase = AppBase;
+
+            var StaticEvent = (function () {
+                function StaticEvent() {
+                }
+                StaticEvent.init = function (EventClass) {
+                    Object.keys(EventClass).forEach(function (key) {
+                        EventClass[key] = [StaticEvent.className(EventClass), key].join('.');
+                    });
+                };
+                StaticEvent.className = function (cls) {
+                    var funcNameRegex = /function (.{1,})\(/;
+                    var results = (funcNameRegex).exec(cls.toString());
+                    return (results && results.length > 1) ? results[1] : "";
+                };
+                return StaticEvent;
+            })();
+            angularjs.StaticEvent = StaticEvent;
         })(xperiments.angularjs || (xperiments.angularjs = {}));
         var angularjs = xperiments.angularjs;
     })(io.xperiments || (io.xperiments = {}));
@@ -67,13 +87,14 @@ var xp;
             DI.markdown = "btford.markdown";
 
             DI.FlickrCommons = "FlickrCommons";
-            DI.PostLoader = "PostLoader";
-            DI.PostWriter = "PostWriter";
-            DI.PostDirectory = "PostDirectory";
-            DI.Media = "Media";
-            DI.MessageBus = "MessageBus";
+            DI.PostLoaderService = "PostLoaderService";
+            DI.PostWriterService = "PostWriterService";
+            DI.PostDirectoryService = "PostDirectoryService";
+            DI.MediaService = "MediaService";
+            DI.MessageBusService = "MessageBusService";
+            DI.ModalService = "ModalService";
             DI.HanSON = "HanSON";
-            DI.FileUploader = "FileUploader";
+            DI.FileService = "FileService";
             DI.GalleryPickerService = "GalleryPickerService";
             return DI;
         })();
@@ -144,17 +165,75 @@ var xp;
     })(xp.mdposteditor || (xp.mdposteditor = {}));
     var mdposteditor = xp.mdposteditor;
 })(xp || (xp = {}));
+
 var xp;
 (function (xp) {
     (function (mdposteditor) {
         (function (services) {
-            var HanSON = (function () {
-                function HanSON() {
-                    return window.HanSON;
+            var DI = xp.mdposteditor.DI;
+            var MessageBusService = (function () {
+                function MessageBusService($rootScope) {
+                    this.$rootScope = $rootScope;
                 }
-                return HanSON;
+                MessageBusService.prototype.emit = function (msg, data) {
+                    data = data || {};
+                    this.$rootScope.$emit(msg, data);
+                };
+                MessageBusService.prototype.on = function (msg, func, scope) {
+                    var unbind = this.$rootScope.$on(msg, func);
+                    scope && scope.$on('$destroy', unbind);
+                    return unbind;
+                };
+                MessageBusService.$inject = [DI.$rootScope];
+                return MessageBusService;
             })();
-            services.HanSON = HanSON;
+            services.MessageBusService = MessageBusService;
+        })(mdposteditor.services || (mdposteditor.services = {}));
+        var services = mdposteditor.services;
+    })(xp.mdposteditor || (xp.mdposteditor = {}));
+    var mdposteditor = xp.mdposteditor;
+})(xp || (xp = {}));
+var xp;
+(function (xp) {
+    (function (mdposteditor) {
+        (function (services) {
+            var StaticEvent = io.xperiments.angularjs.StaticEvent;
+            var DI = xp.mdposteditor.DI;
+
+            var ModalServiceEvent = (function () {
+                function ModalServiceEvent() {
+                }
+                ModalServiceEvent.SHOW = "";
+                return ModalServiceEvent;
+            })();
+            services.ModalServiceEvent = ModalServiceEvent;
+            (function (ModalServiceEvent) {
+                StaticEvent.init(ModalServiceEvent);
+            })(services.ModalServiceEvent || (services.ModalServiceEvent = {}));
+            var ModalServiceEvent = services.ModalServiceEvent;
+            var ModalService = (function () {
+                function ModalService($q, messageBusService) {
+                    this.$q = $q;
+                    this.messageBusService = messageBusService;
+                }
+                ModalService.prototype.show = function (title, content) {
+                    this.deferred = this.$q.defer();
+                    this.messageBusService.emit(ModalServiceEvent.SHOW, { title: title, content: content });
+                    return this.deferred.promise;
+                };
+                ModalService.prototype.accept = function () {
+                    this.deferred.resolve();
+                };
+                ModalService.prototype.cancel = function () {
+                    this.deferred.reject();
+                };
+                ModalService.$inject = [
+                    DI.$q,
+                    DI.MessageBusService
+                ];
+                return ModalService;
+            })();
+            services.ModalService = ModalService;
         })(mdposteditor.services || (mdposteditor.services = {}));
         var services = mdposteditor.services;
     })(xp.mdposteditor || (xp.mdposteditor = {}));
@@ -166,15 +245,17 @@ var xp;
         (function (services) {
             var DI = xp.mdposteditor.DI;
 
-            var FileUploader = (function () {
-                function FileUploader($http) {
+            var FileService = (function () {
+                function FileService($http) {
                     this.$http = $http;
                 }
-                FileUploader.prototype.uploadFilesToUrl = function (uploadUrl, contents, uploadDir, type) {
+                FileService.prototype.uploadFilesToUrl = function (uploadUrl, contents, uploadDir, type, postPublished) {
                     if (typeof type === "undefined") { type = "image"; }
+                    if (typeof postPublished === "undefined") { postPublished = "0"; }
                     var fd = new FormData();
                     fd.append('uploadDir', uploadDir);
                     fd.append('type', type);
+                    fd.append('postPublished', postPublished);
                     contents.forEach(function (file) {
                         fd.append("uploadFiles[]", file.contents, file.name);
                     });
@@ -183,11 +264,10 @@ var xp;
                         transformRequest: angular.identity,
                         headers: { 'Content-Type': undefined }
                     }).then(function (data) {
-                        console.log('cccc', data);
                         return data.data;
                     });
                 };
-                FileUploader.prototype.deleteFile = function (file) {
+                FileService.prototype.deleteFile = function (file) {
                     var fd = new FormData();
                     fd.append('file', file);
 
@@ -195,23 +275,21 @@ var xp;
                         transformRequest: angular.identity,
                         headers: { 'Content-Type': undefined }
                     }).then(function (data) {
-                        console.log('deleted', data);
                         return data.data;
                     });
                 };
-                FileUploader.prototype.downloadFile = function (source, dest) {
+                FileService.prototype.downloadFile = function (source, dest) {
                     return this.$http.get('/downloadFile', { params: { src: source, dst: dest } }).then(function (data) {
-                        console.log('downloaded image', data);
                         return data.data;
                     });
                 };
-                FileUploader.prototype.getPostFileName = function (postTile) {
+                FileService.prototype.getPostFileName = function (postTile) {
                     return postTile.toLowerCase().replace(/^\s+|\s+$/g, '').replace(/[_|\s|\.]+/g, '-').replace(/[^a-z\u0400-\u04FF0-9-]+/g, '').replace(/[-]+/g, '-').replace(/^-+|-+$/g, '');
                 };
-                FileUploader.$inject = [DI.$http];
-                return FileUploader;
+                FileService.$inject = [DI.$http];
+                return FileService;
             })();
-            services.FileUploader = FileUploader;
+            services.FileService = FileService;
         })(mdposteditor.services || (mdposteditor.services = {}));
         var services = mdposteditor.services;
     })(xp.mdposteditor || (xp.mdposteditor = {}));
@@ -223,19 +301,20 @@ var xp;
         (function (services) {
             var Post = xp.mdposteditor.models.Post;
             var DI = xp.mdposteditor.DI;
-            var PostLoader = (function () {
-                function PostLoader($http, $timeout, $q, hanSON) {
+            var PostLoaderService = (function () {
+                function PostLoaderService($http, $timeout, $q, hanSON) {
                     this.$http = $http;
                     this.$timeout = $timeout;
                     this.$q = $q;
                     this.hanSON = hanSON;
                 }
-                PostLoader.prototype.load = function (fileName) {
+                PostLoaderService.prototype.load = function (fileName) {
                     var _this = this;
                     var deferred = this.$q.defer();
                     if (fileName == "::new") {
                         var newPost = new Post();
                         newPost.date = Post.getDateString(new Date);
+                        newPost.published = false;
 
                         deferred.resolve(newPost);
                         return deferred.promise;
@@ -248,7 +327,7 @@ var xp;
                     }
                 };
 
-                PostLoader.prototype.getMetadata = function (content, filename) {
+                PostLoaderService.prototype.getMetadata = function (content, filename) {
                     var curlyNest = 1;
                     var currentIndex = content.indexOf('{') + 1;
 
@@ -279,17 +358,18 @@ var xp;
                     var content = content.substr(currentIndex + 1);
                     metadata['content'] = content;
                     metadata['file'] = filename;
+                    metadata.published = filename[0] != "_";
                     return metadata;
                 };
-                PostLoader.$inject = [
+                PostLoaderService.$inject = [
                     DI.$http,
                     DI.$timeout,
                     DI.$q,
                     DI.HanSON
                 ];
-                return PostLoader;
+                return PostLoaderService;
             })();
-            services.PostLoader = PostLoader;
+            services.PostLoaderService = PostLoaderService;
         })(mdposteditor.services || (mdposteditor.services = {}));
         var services = mdposteditor.services;
     })(xp.mdposteditor || (xp.mdposteditor = {}));
@@ -300,21 +380,21 @@ var xp;
     (function (mdposteditor) {
         (function (services) {
             var DI = xp.mdposteditor.DI;
-            var PostDirectory = (function () {
-                function PostDirectory($http) {
+            var PostDirectoryService = (function () {
+                function PostDirectoryService($http) {
                     this.$http = $http;
                     this.posts = {};
                 }
-                PostDirectory.prototype.getPosts = function () {
+                PostDirectoryService.prototype.getPosts = function () {
                     var _this = this;
                     return this.$http.get('/listPosts').success(function (data) {
                         _this.posts = data;
                     });
                 };
-                PostDirectory.$inject = [DI.$http];
-                return PostDirectory;
+                PostDirectoryService.$inject = [DI.$http];
+                return PostDirectoryService;
             })();
-            services.PostDirectory = PostDirectory;
+            services.PostDirectoryService = PostDirectoryService;
         })(mdposteditor.services || (mdposteditor.services = {}));
         var services = mdposteditor.services;
     })(xp.mdposteditor || (xp.mdposteditor = {}));
@@ -326,84 +406,22 @@ var xp;
         (function (services) {
             var DI = xp.mdposteditor.DI;
 
-            var FlickrCommons = (function () {
-                function FlickrCommons($http) {
+            var PostWriterService = (function () {
+                function PostWriterService($http, fileService) {
                     this.$http = $http;
-                    this.search('cars');
+                    this.fileService = fileService;
                 }
-                FlickrCommons.prototype.search = function (text, per_page) {
-                    var _this = this;
-                    if (typeof per_page === "undefined") { per_page = 100; }
-                    return this.$http({
-                        url: 'https://api.flickr.com/services/rest/',
-                        method: "GET",
-                        params: {
-                            method: "flickr.photos.search",
-                            api_key: "2c6a2d4c00106f6f3fe64dcfa433c9ca",
-                            tags: text.replace(' ', ','),
-                            text: text,
-                            license: "1%2C2%2C3%2C4%2C5%2C6%2C7",
-                            format: "json",
-                            nojsoncallback: "1",
-                            sort: "relevance",
-                            per_page: per_page
-                        }
-                    }).then(function (response) {
-                        var photos = response.data.photos.photo;
-                        var images = [];
-                        _this.searchPhotoResults = photos.map(function (datas) {
-                            var id = datas.id;
-                            var title = datas.title;
-                            var secret = datas.secret;
-                            var server = datas.server;
-                            var farm = datas.farm;
-                            var owner = datas.owner;
-                            var base = id + '_' + secret + '_s.jpg';
-                            var major = id + '_' + secret + '_b.jpg';
-                            var url = 'http://farm' + farm + '.static.flickr.com/' + server + '/' + major;
-                            var img = 'http://farm' + farm + '.static.flickr.com/' + server + '/' + base;
-
-                            return { small: img, big: url };
-                        });
-
-                        _this.searchResult = {
-                            page: response.data.photos.page,
-                            pages: response.data.photos.pages,
-                            perpage: response.data.photos.perpage,
-                            images: _this.searchPhotoResults
-                        };
-                    });
-                };
-                FlickrCommons.$inject = [DI.$http];
-                return FlickrCommons;
-            })();
-            services.FlickrCommons = FlickrCommons;
-        })(mdposteditor.services || (mdposteditor.services = {}));
-        var services = mdposteditor.services;
-    })(xp.mdposteditor || (xp.mdposteditor = {}));
-    var mdposteditor = xp.mdposteditor;
-})(xp || (xp = {}));
-var xp;
-(function (xp) {
-    (function (mdposteditor) {
-        (function (services) {
-            var DI = xp.mdposteditor.DI;
-
-            var PostWriter = (function () {
-                function PostWriter($http, fileUploader) {
-                    this.$http = $http;
-                    this.fileUploader = fileUploader;
-                }
-                PostWriter.prototype.updatePost = function (post) {
+                PostWriterService.prototype.updatePost = function (post) {
                     var postFile = post.serialize();
                     var blob = new Blob([postFile], { type: "text/plain" });
-                    var fileName = post.file ? post.file : this.fileUploader.getPostFileName(post.title) + '.md';
-                    return this.fileUploader.uploadFilesToUrl('/upload', [{ contents: blob, name: fileName }], './posts/', 'post');
+                    var fileName = post.file ? post.file : this.fileService.getPostFileName(post.title) + '.md';
+                    fileName = fileName[0] == "_" ? fileName.substr(1) : fileName;
+                    return this.fileService.uploadFilesToUrl('/upload', [{ contents: blob, name: fileName }], '/posts/', 'post', post.published ? "1" : "0");
                 };
-                PostWriter.$inject = [DI.$http, DI.FileUploader];
-                return PostWriter;
+                PostWriterService.$inject = [DI.$http, DI.FileService];
+                return PostWriterService;
             })();
-            services.PostWriter = PostWriter;
+            services.PostWriterService = PostWriterService;
         })(mdposteditor.services || (mdposteditor.services = {}));
         var services = mdposteditor.services;
     })(xp.mdposteditor || (xp.mdposteditor = {}));
@@ -415,47 +433,63 @@ var xp;
         (function (services) {
             var DI = xp.mdposteditor.DI;
 
-            var Media = (function () {
-                function Media($http) {
+            var MediaService = (function () {
+                function MediaService($http) {
                     this.$http = $http;
                 }
-                Media.prototype.listMedia = function () {
+                MediaService.prototype.listMedia = function () {
                     return this.$http.get('/listImages').then(function (data) {
                         return data.data;
                     });
                 };
-                Media.$inject = [DI.$http];
-                return Media;
+                MediaService.$inject = [DI.$http];
+                return MediaService;
             })();
-            services.Media = Media;
+            services.MediaService = MediaService;
         })(mdposteditor.services || (mdposteditor.services = {}));
         var services = mdposteditor.services;
     })(xp.mdposteditor || (xp.mdposteditor = {}));
     var mdposteditor = xp.mdposteditor;
 })(xp || (xp = {}));
-
 var xp;
 (function (xp) {
     (function (mdposteditor) {
         (function (services) {
-            var DI = xp.mdposteditor.DI;
-            var MessageBus = (function () {
-                function MessageBus($rootScope) {
-                    this.$rootScope = $rootScope;
+            var StaticEvent = io.xperiments.angularjs.StaticEvent;
+            var GalleryPickerEvent = (function () {
+                function GalleryPickerEvent() {
                 }
-                MessageBus.prototype.emit = function (msg, data) {
-                    data = data || {};
-                    this.$rootScope.$emit(msg, data);
-                };
-                MessageBus.prototype.on = function (msg, func, scope) {
-                    var unbind = this.$rootScope.$on(msg, func);
-                    scope && scope.$on('$destroy', unbind);
-                    return unbind;
-                };
-                MessageBus.$inject = [DI.$rootScope];
-                return MessageBus;
+                GalleryPickerEvent.PICK = "";
+                return GalleryPickerEvent;
             })();
-            services.MessageBus = MessageBus;
+            services.GalleryPickerEvent = GalleryPickerEvent;
+            (function (GalleryPickerEvent) {
+                StaticEvent.init(GalleryPickerEvent);
+            })(services.GalleryPickerEvent || (services.GalleryPickerEvent = {}));
+            var GalleryPickerEvent = services.GalleryPickerEvent;
+            var GalleryPickerService = (function () {
+                function GalleryPickerService($q, messageBus) {
+                    this.$q = $q;
+                    this.messageBus = messageBus;
+                }
+                GalleryPickerService.prototype.pickFile = function () {
+                    this.deferred = this.$q.defer();
+                    this.messageBus.emit(GalleryPickerEvent.PICK);
+                    return this.deferred.promise;
+                };
+                GalleryPickerService.prototype.resolve = function (file) {
+                    this.deferred.resolve(file);
+                };
+                GalleryPickerService.prototype.reject = function () {
+                    this.deferred.reject();
+                };
+                GalleryPickerService.$inject = [
+                    mdposteditor.DI.$q,
+                    mdposteditor.DI.MessageBusService
+                ];
+                return GalleryPickerService;
+            })();
+            services.GalleryPickerService = GalleryPickerService;
         })(mdposteditor.services || (mdposteditor.services = {}));
         var services = mdposteditor.services;
     })(xp.mdposteditor || (xp.mdposteditor = {}));
@@ -490,20 +524,57 @@ var xp;
 (function (xp) {
     (function (mdposteditor) {
         (function (controllers) {
+            var DI = xp.mdposteditor.DI;
+
+            var ModalServiceEvent = xp.mdposteditor.services.ModalServiceEvent;
+
+            var ModalController = (function () {
+                function ModalController($scope, $q, messageBusService, modalService) {
+                    var _this = this;
+                    this.$scope = $scope;
+                    this.$q = $q;
+                    this.messageBusService = messageBusService;
+                    this.modalService = modalService;
+                    this.visible = false;
+                    messageBusService.on(ModalServiceEvent.SHOW, function (event, data) {
+                        _this.title = data.title;
+                        _this.content = data.content;
+                        _this.visible = true;
+                    });
+                }
+                ModalController.prototype.accept = function () {
+                    this.visible = false;
+                    this.modalService.accept();
+                };
+                ModalController.prototype.cancel = function () {
+                    this.visible = false;
+                    this.modalService.cancel();
+                };
+                ModalController.$inject = [DI.$scope, DI.$q, DI.MessageBusService, DI.ModalService];
+                return ModalController;
+            })();
+            controllers.ModalController = ModalController;
+        })(mdposteditor.controllers || (mdposteditor.controllers = {}));
+        var controllers = mdposteditor.controllers;
+    })(xp.mdposteditor || (xp.mdposteditor = {}));
+    var mdposteditor = xp.mdposteditor;
+})(xp || (xp = {}));
+var xp;
+(function (xp) {
+    (function (mdposteditor) {
+        (function (controllers) {
             var Post = xp.mdposteditor.models.Post;
 
             var DI = xp.mdposteditor.DI;
 
             var EditPostController = (function () {
-                function EditPostController($scope, $routeParams, $location, postLoader, postWriter, media, msgBus, galleryPickerService) {
+                function EditPostController($scope, $routeParams, $location, postLoaderService, postWriterService, galleryPickerService) {
                     var _this = this;
                     this.$scope = $scope;
                     this.$routeParams = $routeParams;
                     this.$location = $location;
-                    this.postLoader = postLoader;
-                    this.postWriter = postWriter;
-                    this.media = media;
-                    this.msgBus = msgBus;
+                    this.postLoaderService = postLoaderService;
+                    this.postWriterService = postWriterService;
                     this.galleryPickerService = galleryPickerService;
                     this.image = "";
                     this.markdown = "";
@@ -512,7 +583,7 @@ var xp;
                     $scope.aceLoaded = function (editor) {
                         _this.editor = editor;
                     };
-                    postLoader.load($routeParams.id).then(function (response) {
+                    postLoaderService.load($routeParams.id).then(function (response) {
                         _this.post = new Post();
                         _this.post.mix(response);
                         _this.post.image && (_this.hasHeadImage = true);
@@ -532,7 +603,7 @@ var xp;
                 };
                 EditPostController.prototype.updatePost = function () {
                     var _this = this;
-                    this.postWriter.updatePost(this.post).then(function () {
+                    this.postWriterService.updatePost(this.post).then(function () {
                         return _this.$location.path("/");
                     });
                 };
@@ -569,7 +640,7 @@ var xp;
                 EditPostController.prototype.pickHeader = function () {
                     var _this = this;
                     this.galleryPickerService.pickFile().then(function (file) {
-                        _this.post.image = file.substr(4);
+                        _this.post.image = file;
                         _this.hasHeadImage = true;
                     });
                 };
@@ -585,10 +656,8 @@ var xp;
                     DI.$scope,
                     DI.$routeParams,
                     DI.$location,
-                    DI.PostLoader,
-                    DI.PostWriter,
-                    DI.Media,
-                    DI.MessageBus,
+                    DI.PostLoaderService,
+                    DI.PostWriterService,
                     DI.GalleryPickerService
                 ];
                 return EditPostController;
@@ -605,25 +674,28 @@ var xp;
         (function (controllers) {
             var DI = xp.mdposteditor.DI;
             var ListPostsController = (function () {
-                function ListPostsController($scope, postDirectory, fileUploader) {
+                function ListPostsController($scope, postDirectoryService, fileService, modalService) {
                     this.$scope = $scope;
-                    this.postDirectory = postDirectory;
-                    this.fileUploader = fileUploader;
+                    this.postDirectoryService = postDirectoryService;
+                    this.fileService = fileService;
+                    this.modalService = modalService;
                     this.listPosts();
                 }
                 ListPostsController.prototype.listPosts = function () {
                     var _this = this;
-                    return this.postDirectory.getPosts().then(function () {
-                        return _this.posts = _this.postDirectory.posts;
+                    return this.postDirectoryService.getPosts().then(function () {
+                        return _this.posts = _this.postDirectoryService.posts;
                     });
                 };
                 ListPostsController.prototype.deletePost = function (file) {
                     var _this = this;
-                    return this.fileUploader.deleteFile(file).then(function () {
-                        _this.listPosts();
+                    this.modalService.show("Confirm Delete", "Are you sure?").then(function () {
+                        _this.fileService.deleteFile(file).then(function () {
+                            return _this.listPosts();
+                        });
                     });
                 };
-                ListPostsController.$inject = [DI.$scope, DI.PostDirectory, DI.FileUploader];
+                ListPostsController.$inject = [DI.$scope, DI.PostDirectoryService, DI.FileService, DI.ModalService];
                 return ListPostsController;
             })();
             controllers.ListPostsController = ListPostsController;
@@ -636,74 +708,21 @@ var xp;
 (function (xp) {
     (function (mdposteditor) {
         (function (controllers) {
-            var DI = xp.mdposteditor.DI;
-            var MediaController = (function () {
-                function MediaController($scope, flickrCommons) {
-                    this.$scope = $scope;
-                    this.flickrCommons = flickrCommons;
-                    this.searchValue = "";
-                    this.per_page = 100;
-                }
-                MediaController.prototype.search = function () {
-                    var _this = this;
-                    if (this.searchValue == "")
-                        return;
-                    this.flickrCommons.search(this.searchValue, this.per_page).then(function () {
-                        _this.searchImages = _this.flickrCommons.searchPhotoResults;
-                    });
-                };
-                MediaController.$inject = [DI.$scope, DI.FlickrCommons];
-                return MediaController;
-            })();
-            controllers.MediaController = MediaController;
-        })(mdposteditor.controllers || (mdposteditor.controllers = {}));
-        var controllers = mdposteditor.controllers;
-    })(xp.mdposteditor || (xp.mdposteditor = {}));
-    var mdposteditor = xp.mdposteditor;
-})(xp || (xp = {}));
-var xp;
-(function (xp) {
-    (function (mdposteditor) {
-        (function (controllers) {
-            var DI = xp.mdposteditor.DI;
-            var SideController = (function () {
-                function SideController($scope) {
-                    this.$scope = $scope;
-                }
-                SideController.prototype.dashboard = function () {
-                };
-                SideController.prototype.posts = function () {
-                };
-                SideController.prototype.media = function () {
-                };
-                SideController.$inject = [DI.$scope];
-                return SideController;
-            })();
-            controllers.SideController = SideController;
-        })(mdposteditor.controllers || (mdposteditor.controllers = {}));
-        var controllers = mdposteditor.controllers;
-    })(xp.mdposteditor || (xp.mdposteditor = {}));
-    var mdposteditor = xp.mdposteditor;
-})(xp || (xp = {}));
-var xp;
-(function (xp) {
-    (function (mdposteditor) {
-        (function (controllers) {
-            var DI = xp.mdposteditor.DI;
+            var GalleryPickerEvent = xp.mdposteditor.services.GalleryPickerEvent;
 
             var GalleryPickerController = (function () {
-                function GalleryPickerController($scope, $timeout, media, msgBus, fileUploader) {
+                function GalleryPickerController($scope, $timeout, mediaService, messageBusService, fileService, galleryPickerService) {
                     var _this = this;
                     this.$scope = $scope;
                     this.$timeout = $timeout;
-                    this.media = media;
-                    this.msgBus = msgBus;
-                    this.fileUploader = fileUploader;
+                    this.mediaService = mediaService;
+                    this.messageBusService = messageBusService;
+                    this.fileService = fileService;
+                    this.galleryPickerService = galleryPickerService;
                     this.visible = false;
                     this.folderDepth = [];
                     this.folderPath = ['root'];
-                    this.msgBus.on(GalleryPickerController.PICK, function (event, deferred) {
-                        _this.currentDeferred = deferred;
+                    this.messageBusService.on(GalleryPickerEvent.PICK, function () {
                         _this.toggleGalleryPicker();
                     }, $scope);
                 }
@@ -715,7 +734,7 @@ var xp;
                     }
                 };
                 GalleryPickerController.prototype.close = function () {
-                    this.currentDeferred.reject();
+                    this.galleryPickerService.reject();
                 };
                 GalleryPickerController.prototype.showFolder = function (file) {
                     this.lastFolder = file;
@@ -725,7 +744,7 @@ var xp;
                 };
                 GalleryPickerController.prototype.selectImage = function (image) {
                     this.toggleGalleryPicker();
-                    this.currentDeferred.resolve(image);
+                    this.galleryPickerService.resolve(image);
                 };
 
                 GalleryPickerController.prototype.folderUp = function () {
@@ -739,23 +758,23 @@ var xp;
                     var _this = this;
                     if (typeof dropObject === "undefined") { dropObject = null; }
                     if (dropObject.textDrop) {
-                        this.fileUploader.downloadFile(dropObject.textDrop, './src/images/' + this.getRelativeUploadPath() + this.hashCode(dropObject.textDrop)).then(function (data) {
+                        this.fileService.downloadFile(dropObject.textDrop, './src/images/' + this.getRelativeUploadPath() + this.hashCode(dropObject.textDrop)).then(function (data) {
                             _this.$timeout(function () {
                                 _this.toggleGalleryPicker();
-                                _this.currentDeferred.resolve(data.downloadedImage);
+                                _this.galleryPickerService.resolve(data.downloadedImage);
                             }, 1000);
                         });
                     } else {
-                        this.fileUploader.uploadFilesToUrl('/upload', [{ contents: dropObject.file, name: dropObject.file.name }], './src/images/' + this.getRelativeUploadPath()).then(function (data) {
+                        this.fileService.uploadFilesToUrl('/upload', [{ contents: dropObject.file, name: dropObject.file.name }], './src/images/' + this.getRelativeUploadPath()).then(function (data) {
                             _this.toggleGalleryPicker();
-                            _this.currentDeferred.resolve(data.uploadedFiles[0].path);
+                            _this.galleryPickerService.resolve(data.uploadedFiles[0].path);
                         });
                     }
                 };
 
                 GalleryPickerController.prototype.updateMedia = function () {
                     var _this = this;
-                    return this.media.listMedia().then(function (data) {
+                    return this.mediaService.listMedia().then(function (data) {
                         return _this.initFolder(data);
                     });
                 };
@@ -785,15 +804,13 @@ var xp;
                     return hash;
                 };
                 GalleryPickerController.$inject = [
-                    DI.$scope,
-                    DI.$timeout,
-                    DI.Media,
-                    DI.MessageBus,
-                    DI.FileUploader
+                    mdposteditor.DI.$scope,
+                    mdposteditor.DI.$timeout,
+                    mdposteditor.DI.MediaService,
+                    mdposteditor.DI.MessageBusService,
+                    mdposteditor.DI.FileService,
+                    mdposteditor.DI.GalleryPickerService
                 ];
-                GalleryPickerController.PICK = "GalleryPickerController.PICK";
-                GalleryPickerController.CLOSE = "GalleryPickerController.CLOSE";
-                GalleryPickerController.SELECT = "GalleryPickerController.SELECT";
                 return GalleryPickerController;
             })();
             controllers.GalleryPickerController = GalleryPickerController;
@@ -952,43 +969,16 @@ var xp;
 })(xp || (xp = {}));
 var EditPostView;
 (function (EditPostView) {
-    EditPostView.html = '<md-gallery></md-gallery><!-- EDIT POST --><div class="row">	<div class="col-lg-12 xp-admin--page">		<!-- /.panel -->		<div class="panel panel-default">			<div class="panel-heading xp-admin-title">				<i class="fa fa-pencil-square-o fa-4x xp-admin-title--icon"></i> <span>Edit Posts</span>				<button class="btn btn-success btn-circle btn-xl fa fa-download pull-right" ng-click="edit.updatePost()" ng-disabled="!form.$valid"></button>			</div>			<form name="form" novalidate style="padding:20px;">				<div class="row">					<div class="col-xs-12 xp-editor-buttons">						<div class="btn btn-success btn-circle" ng-click="edit.togglePreview()" ><i class="fa" ng-class="{\'fa-eye\':edit.previewVisible,\'fa-code\':!edit.previewVisible}"></i></div>						<div class="btn btn-success btn-circle" ng-click="edit.setStyle(\'b\')" ><i class="fa fa-bold"></i></div>						<div class="btn btn-success btn-circle" ng-click="edit.setStyle(\'i\')" ><i class="fa fa-italic"></i></div>						<div class="btn btn-success btn-circle" ng-click="edit.setStyle(\'q\')" ><i class="fa fa-quote-left"></i></div>						<div class="btn btn-success btn-circle" ng-click="edit.setStyle(\'o\')" ><i class="fa fa-list-ol"></i></div>						<div class="btn btn-success btn-circle" ng-click="edit.setStyle(\'u\')" ><i class="fa fa-list-ul"></i></div>						<div class="btn btn-success btn-circle" ng-click="edit.setStyle(\'h\')" ><i class="fa fa-ellipsis-h"></i></div>						<div class="btn btn-success btn-circle" ng-click="edit.insertImage()" ><i class="fa fa-picture-o"></i></div>					</div>				</div>				<div class="row">					<div class="col-xs-8">						<div ng-show="!edit.previewVisible" ui-ace="{showGutter: true, mode:\'markdown\', theme:\'tomorrow_night\',onLoad:aceLoaded}" ng-model="edit.post.content"></div>						<div ng-show="edit.previewVisible" btf-markdown="edit.post.content" class="markdown" style="overflow: scroll; height:800px; padding: 40px;border: 1px solid #ddd;"></div>					</div>					<div class="col-xs-4">						<!-- /.panel -->						<div class="panel panel-default">							<div class="panel-heading">								<i class="fa fa-bookmark-o"></i> Meta								<div class="pull-right"><!-- <input name="published" type="checkbox" value=""> Published --></div>							</div>							<!-- /.panel-heading -->							<div class="panel-body">								<div class="row">									<div class="col-xs-12">										<form name="form">											<div class="form-group" ng-class="{\'has-error\':form.date.$error.required}">												<label>Date</label>												<input name="date" class="form-control" placeholder="YYYY-MM-DD	" ng-model="edit.post.date" type="text" required>											</div>											<div class="form-group" ng-class="{\'has-error\':form.title.$error.required}">												<label>Title</label>												<input name="title" class="form-control" placeholder="Post Title" ng-model="edit.post.title" required>											</div>											<div class="form-group">												<label>Description</label>												<textarea name="description" class="form-control" rows="3" ng-model="edit.post.description"></textarea>											</div>											<div class="form-group">												<label>Categories</label>												<input class="form-control" placeholder="Categories" ng-model="edit.post.categories" ng-list>											</div>										</form>									</div>								</div>							</div>						</div>						<div class="panel panel-default">							<div class="panel-heading">								<i class="fa fa-picture-o"></i> Post Header Image							</div>							<!-- /.panel-heading -->							<div class="panel-body">								<div class="row">									<div class="col-xs-2 text-center">										<a style="margin-bottom:10px" ng-click="edit.pickHeader()" class="btn btn-info btn-circle btn-lg fa fa-folder-open xp-btn-lg-icon"></a>										<a ng-show="edit.hasHeadImage" style="margin-bottom:10px" ng-click="edit.clearHeader()" class="btn btn-danger btn-circle btn-lg fa fa-flash xp-btn-lg-icon"></a>									</div>									<div class="col-xs-10">										<div ng-show="edit.hasHeadImage" class="thumbnail">											<div ng-cloak class="xp-gallery-thumbnail" ng-style="{\'background-image\':\'url(\'+edit.post.image+\')\' }" style="height:250px;"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="100%" height="100%"></div>										</div>									</div>								</div>							</div>						</div>					</div>				</div>			</form>		</div>	</div></div>';
+    EditPostView.html = '<md-gallery></md-gallery><!-- EDIT POST --><div class="row">	<div class="col-lg-12 xp-admin--page">		<!-- /.panel -->		<div class="panel panel-default">			<div class="panel-heading xp-admin-title">				<i class="fa fa-pencil-square-o fa-4x xp-admin-title--icon"></i> <span>Edit Posts</span>				<button class="btn btn-success btn-circle btn-xl fa fa-download pull-right" ng-click="edit.updatePost()" ng-disabled="!form.$valid"></button>			</div>			<form name="form" novalidate style="padding:20px;">				<div class="row">					<div class="col-xs-12 xp-editor-buttons">						<div class="btn btn-success btn-circle" ng-click="edit.togglePreview()" ><i class="fa" ng-class="{\'fa-eye\':edit.previewVisible,\'fa-code\':!edit.previewVisible}"></i></div>						<div class="btn btn-success btn-circle" ng-click="edit.setStyle(\'b\')" ><i class="fa fa-bold"></i></div>						<div class="btn btn-success btn-circle" ng-click="edit.setStyle(\'i\')" ><i class="fa fa-italic"></i></div>						<div class="btn btn-success btn-circle" ng-click="edit.setStyle(\'q\')" ><i class="fa fa-quote-left"></i></div>						<div class="btn btn-success btn-circle" ng-click="edit.setStyle(\'o\')" ><i class="fa fa-list-ol"></i></div>						<div class="btn btn-success btn-circle" ng-click="edit.setStyle(\'u\')" ><i class="fa fa-list-ul"></i></div>						<div class="btn btn-success btn-circle" ng-click="edit.setStyle(\'h\')" ><i class="fa fa-ellipsis-h"></i></div>						<div class="btn btn-success btn-circle" ng-click="edit.insertImage()" ><i class="fa fa-picture-o"></i></div>					</div>				</div>				<div class="row">					<div class="col-xs-8">						<div ng-show="!edit.previewVisible" ui-ace="{showGutter: true, mode:\'markdown\', theme:\'tomorrow_night\',onLoad:aceLoaded}" ng-model="edit.post.content"></div>						<div ng-show="edit.previewVisible" btf-markdown="edit.post.content" class="markdown" style="overflow: scroll; height:800px; padding: 40px;border: 1px solid #ddd;"></div>					</div>					<div class="col-xs-4">						<!-- /.panel -->						<div class="panel panel-default">							<div class="panel-heading">								<i class="fa fa-bookmark-o"></i> Meta								<div class="pull-right">									<input name="published" type="checkbox" ng-model="edit.post.published"> Published								</div>							</div>							<!-- /.panel-heading -->							<div class="panel-body">								<div class="row">									<div class="col-xs-12">										<form name="form">											<div class="form-group" ng-class="{\'has-error\':form.date.$error.required}">												<label>Date</label>												<input name="date" class="form-control" placeholder="YYYY-MM-DD	" ng-model="edit.post.date" type="text" required>											</div>											<div class="form-group" ng-class="{\'has-error\':form.title.$error.required}">												<label>Title</label>												<input name="title" class="form-control" placeholder="Post Title" ng-model="edit.post.title" required>											</div>											<div class="form-group">												<label>Description</label>												<textarea name="description" class="form-control" rows="3" ng-model="edit.post.description"></textarea>											</div>											<div class="form-group">												<label>Categories</label>												<input class="form-control" placeholder="Categories" ng-model="edit.post.categories" ng-list>											</div>										</form>									</div>								</div>							</div>						</div>						<div class="panel panel-default">							<div class="panel-heading">								<i class="fa fa-picture-o"></i> Post Header Image							</div>							<!-- /.panel-heading -->							<div class="panel-body">								<div class="row">									<div class="col-xs-2 text-center">										<a style="margin-bottom:10px" ng-click="edit.pickHeader()" class="btn btn-info btn-circle btn-lg fa fa-folder-open xp-btn-lg-icon"></a>										<a ng-show="edit.hasHeadImage" style="margin-bottom:10px" ng-click="edit.clearHeader()" class="btn btn-danger btn-circle btn-lg fa fa-flash xp-btn-lg-icon"></a>									</div>									<div class="col-xs-10">										<div ng-show="edit.hasHeadImage" class="thumbnail">											<div ng-cloak class="xp-gallery-thumbnail" ng-style="{\'background-image\':\'url(\'+edit.post.image+\')\' }" style="height:250px;"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="100%" height="100%"></div>										</div>									</div>								</div>							</div>						</div>					</div>				</div>			</form>		</div>	</div></div>';
 })(EditPostView || (EditPostView = {}));
 var ListPostView;
 (function (ListPostView) {
-    ListPostView.html = '<!-- POSTS --><div class="row">	<div class="col-lg-12 xp-admin--page">		<!-- /.panel -->		<div class="panel panel-default">			<div class="panel-heading xp-admin-title">				<i class="fa fa-file-text-o fa-4x xp-admin-title--icon"></i> <span>Posts</span>			</div>			<!-- /.panel-heading -->			<div class="panel-body">				<div class="row">					<div class="col-lg-12">						<div class="table-responsive">							<table class="table">								<thead>								<tr>									<th><i class="fa fa-clock-o"></i> DATE </th>									<th><i class="fa fa-text-width"></i> TITLE</th>									<th><i class="fa fa-tags"></i> CATEGORIES</th>									<th><i class="fa fa-align-justify"></i> DESCRIPTION</th>									<th></th>								</tr>								</thead>								<tbody>								<tr ng-repeat="(key,post) in list.posts | toArray | orderBy:\'-date\' ">									<td class="text-success">{{post.date}}</td>									<td>{{post.title}}</td>									<td>{{post.categories.join(\', \')}}</td>									<td>{{post.description}}</td>									<td style="text-align: right">										<a ng-href="#/edit/{{post.file.replace(\'./posts/\',\'\')}}" type="button" class="btn btn-success btn-circle btn-lg"><i class="fa fa-pencil"></i></a>										<a type="button" class="btn btn-danger btn-circle btn-lg" ng-click="list.deletePost( post.file )"><i class="fa fa-trash-o"></i></a>									</td>								</tr>								</tbody>							</table>						</div>						<!-- /.table-responsive -->					</div>				</div>				<!-- /.row -->			</div>			<!-- /.panel-body -->		</div>		<!-- /.panel -->	</div></div>';
+    ListPostView.html = '<!-- POSTS --><div class="row">	<div class="col-lg-12 xp-admin--page">		<!-- /.panel -->		<div class="panel panel-default">			<div class="panel-heading xp-admin-title">				<i class="fa fa-file-text-o fa-4x xp-admin-title--icon"></i> <span>Posts</span>			</div>			<!-- /.panel-heading -->			<div class="panel-body">				<div class="row">					<div class="col-lg-12">						<div class="table-responsive">							<table class="table">								<thead>								<tr>									<th><i class="fa fa-clock-o"></i> DATE </th>									<th><i class="fa fa-text-width"></i> TITLE</th>									<th><i class="fa fa-tags"></i> CATEGORIES</th>									<th><i class="fa fa-align-justify"></i> STATUS</th>									<th></th>								</tr>								</thead>								<tbody>								<tr ng-repeat="(key,post) in list.posts | toArray | orderBy:\'-date\' ">									<td class="text-success">{{post.date}}</td>									<td>{{post.title}}</td>									<td>{{post.categories.join(\', \')}}</td>									<td>										<span ng-if="post.published" class="label label-success">Published</span>										<span ng-if="!post.published" class="label label-warning">Draft</span>									</td>									<td style="text-align: right">										<a ng-href="#/edit/{{post.file.replace(\'./posts/\',\'\')}}" type="button" class="btn btn-success btn-circle btn-lg"><i class="fa fa-pencil"></i></a>										<a type="button" class="btn btn-danger btn-circle btn-lg" ng-click="list.deletePost( post.file )"><i class="fa fa-trash-o"></i></a>									</td>								</tr>								</tbody>							</table>						</div>						<!-- /.table-responsive -->					</div>				</div>				<!-- /.row -->			</div>			<!-- /.panel-body -->		</div>		<!-- /.panel -->	</div></div>';
 })(ListPostView || (ListPostView = {}));
 var GalleryPicker;
 (function (GalleryPicker) {
     GalleryPicker.html = '<div class="modal" ng-show="gallery.visible">	<div class="modal-dialog xp-dialog-gallery">		<div class="modal-content xp-dialog-gallery-content">			<div class="modal-header">				<button type="button" class="close" aria-hidden="true" ng-click="gallery.toggleGalleryPicker()">×</button>				<h4 class="modal-title" id="myModalLabel">Media library items</h4>			</div>			<div class="modal-body xp-dialog-gallery-body">				<div class="row">					<div class="col-md-12">						<h4><span class="fa fa-folder-open"></span>/{{gallery.folderPath.join(\'/\')}}</h4>					</div>				</div>				<div class="row">					<div class="col-md-2 text-center" file-dropzone="[image/png, image/jpeg, image/gif]" on-drop="gallery.onDrop(data)" file="gallery.uploadImage" file-name="gallery.uploadImageName" data-max-file-size="3">						<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="100%" height="100%">						<div class="xp-dialog-gallery-folder-container">							<div class="xp-dialog-gallery-folder">								<div class="fa fa-cloud-download fa-5x"></div>								Drop Files Here{{ gallery.uploadImageName }}							</div>						</div>					</div>					<div class="col-md-2 text-center" ng-if="gallery.folderDepth.length!=0"  ng-click="gallery.folderUp()" >						<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="100%" height="100%">						<div class="xp-dialog-gallery-folder-container">							<div class="xp-dialog-gallery-folder">								<div class="fa fa-arrow-circle-up fa-5x"></div>							</div>						</div>					</div>					<div class="col-md-2" ng-repeat="file in gallery.imageNode" >						<div class="thumbnail" ng-if="file.type==\'folder\'" ng-click="gallery.showFolder(file)">							<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="100%" height="100%">								<div class="xp-dialog-gallery-folder">									<div class="fa fa-folder fa-5x"></div>									{{file.name}}								</div>						</div>						<div class="thumbnail" ng-if="file.type==\'file\'">							<div class="xp-gallery-thumbnail" style="background-image: url(\'{{file.path.replace(\'./src/images\',\'\')}}\')" ng-if="gallery.isMediaFile(file)" ng-click="gallery.selectImage(file.path)"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="100%" height="100%"></div>						</div>					</div>				</div>			</div>			<div class="modal-footer">				<button type="button" class="btn btn-default" ng-click="gallery.toggleGalleryPicker()">Close</button>			</div>		</div>	</div></div>';
 })(GalleryPicker || (GalleryPicker = {}));
-var xp;
-(function (xp) {
-    (function (mdposteditor) {
-        (function (services) {
-            var GalleryPickerController = xp.mdposteditor.controllers.GalleryPickerController;
-            var GalleryPickerService = (function () {
-                function GalleryPickerService($q, messageBus) {
-                    this.$q = $q;
-                    this.messageBus = messageBus;
-                }
-                GalleryPickerService.prototype.pickFile = function () {
-                    var deferred = this.$q.defer();
-                    this.messageBus.emit(GalleryPickerController.PICK, deferred);
-                    return deferred.promise;
-                };
-                GalleryPickerService.$inject = [
-                    mdposteditor.DI.$q,
-                    mdposteditor.DI.MessageBus
-                ];
-                return GalleryPickerService;
-            })();
-            services.GalleryPickerService = GalleryPickerService;
-        })(mdposteditor.services || (mdposteditor.services = {}));
-        var services = mdposteditor.services;
-    })(xp.mdposteditor || (xp.mdposteditor = {}));
-    var mdposteditor = xp.mdposteditor;
-})(xp || (xp = {}));
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -1014,6 +1004,7 @@ var xp;
                 this.wireDirectives(xp.mdposteditor.directives);
                 this.wireFilters(xp.mdposteditor.filters);
                 this.config(xp.mdposteditor.config);
+                this.constants({ 'HanSON': window.HanSON });
             };
 
             App.prototype.disableLiveReload = function () {

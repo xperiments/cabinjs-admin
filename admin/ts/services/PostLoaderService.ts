@@ -7,7 +7,7 @@ module xp.mdposteditor.services
 {
 	import Post = xp.mdposteditor.models.Post;
 	import DI = xp.mdposteditor.DI;
-	export class PostLoader
+	export class PostLoaderService
 	{
 		static $inject:string[] = [
 			 DI.$http
@@ -25,6 +25,7 @@ module xp.mdposteditor.services
 			{
 				var newPost:Post = new Post();
 					newPost.date = Post.getDateString(new Date);
+					newPost.published = false;
 				// Resolve the deferred $q object before returning the promise
 				deferred.resolve(newPost);
 				return deferred.promise;
@@ -71,6 +72,7 @@ module xp.mdposteditor.services
 			var content:string = content.substr( currentIndex+1 );
 				metadata['content'] = content;
 				metadata['file'] = filename;
+				metadata.published = filename[0]!="_";
 			return metadata;
 		}
 	}

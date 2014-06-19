@@ -19,7 +19,7 @@ module xp.mdposteditor.services
 		children:IMediaResource[];
 	}
 
-	export class Media
+	export class MediaService
 	{
 		static $inject =  [ DI.$http ];
 		constructor(private $http:ng.IHttpService)

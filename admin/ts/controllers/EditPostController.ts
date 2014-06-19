@@ -4,11 +4,9 @@ module xp.mdposteditor.controllers
 	import IMediaResource 		= xp.mdposteditor.services.IMediaResource;
 	import IPost 				= xp.mdposteditor.models.IPost;
 
-	import PostLoader			= xp.mdposteditor.services.PostLoader;
-	import PostWriter 			= xp.mdposteditor.services.PostWriter;
+	import PostLoaderService	= xp.mdposteditor.services.PostLoaderService;
+	import PostWriterService	= xp.mdposteditor.services.PostWriterService;
 	import GalleryPickerService = xp.mdposteditor.services.GalleryPickerService;
-	import Media 				= xp.mdposteditor.services.Media;
-	import MessageBus 			= xp.mdposteditor.services.MessageBus;
 
 	import Post 				= xp.mdposteditor.models.Post;
 
@@ -20,10 +18,8 @@ module xp.mdposteditor.controllers
 			 DI.$scope
 			,DI.$routeParams
 			,DI.$location
-			,DI.PostLoader
-			,DI.PostWriter
-			,DI.Media
-			,DI.MessageBus
+			,DI.PostLoaderService
+			,DI.PostWriterService
 			,DI.GalleryPickerService
 		];
 		post:Post;
@@ -37,10 +33,8 @@ module xp.mdposteditor.controllers
 			 private $scope
 			,private $routeParams
 			,private $location
-			,private postLoader:PostLoader
-			,private postWriter:PostWriter
-			,private media:Media
-			,private msgBus:MessageBus
+			,private postLoaderService:PostLoaderService
+			,private postWriterService:PostWriterService
 			,private galleryPickerService:GalleryPickerService
 
 		)
@@ -49,7 +43,7 @@ module xp.mdposteditor.controllers
 			{
 				this.editor = editor;
 			};
-			postLoader.load( $routeParams.id ).then(( response:IPost )=>{
+			postLoaderService.load( $routeParams.id ).then(( response:IPost )=>{
 				this.post = new Post();
 				this.post.mix( response );
 				this.post.image && (this.hasHeadImage = true);
@@ -74,7 +68,7 @@ module xp.mdposteditor.controllers
 		}
 		updatePost()
 		{
-			this.postWriter.updatePost( this.post ).then(( )=> this.$location.path( "/" ));
+			this.postWriterService.updatePost( this.post ).then(( )=> this.$location.path( "/" ));
 		}
 		updateEditor()
 		{
@@ -112,7 +106,7 @@ module xp.mdposteditor.controllers
 		pickHeader()
 		{
 			this.galleryPickerService.pickFile().then((file)=>{
-				this.post.image = file.substr(4);
+				this.post.image = file;
 				this.hasHeadImage = true;
 			});
 		}

@@ -22,7 +22,7 @@ module.exports = function (grunt) {
 						sourceMap: false,               // true (default) | false
 						declaration: false,            // true | false (default)
 						removeComments: true,           // true (default) | false
-						fast:"never"
+						fast:false
 					}
 				}
 			},

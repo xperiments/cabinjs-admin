@@ -17,6 +17,7 @@ module xp.mdposteditor.models
 		image?:string;
 		content?:string;
 		categories?:string[];
+		published:boolean;
 
 	}
 	export interface IPostJSON
@@ -27,6 +28,7 @@ module xp.mdposteditor.models
 		image?:string;
 		content?:string;
 		categories?:string[];
+		published:boolean;
 
 	}
 	export class Post implements IPost
@@ -38,7 +40,7 @@ module xp.mdposteditor.models
 		content:string;
 		categories:string[];
 		file:string;
-
+		published:boolean;
 		serialize()
 		{
 			var jsonMetadata:IPostJSON = <IPostJSON>{};
