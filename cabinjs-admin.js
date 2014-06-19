@@ -243,9 +243,11 @@ var download = function(url, dest, res ) {
 		dest = dest + ext;
 		var file = fs.createWriteStream(dest);
 		file.on('finish', function() {
-			file['close']();  // close() is async, call cb after close completes.
-			res.setHeader('Content-Type', 'application/json');
-			res.end(JSON.stringify({downloadedImage: dest }));
+			file['close'](function(){
+				res.setHeader('Content-Type', 'application/json');
+				res.end(JSON.stringify({downloadedImage: dest.substr(5) }));
+			});  // close() is async, call cb after close completes.
+
 		});
 
 		response.pipe(file);
@@ -308,7 +310,7 @@ function upload(req, res, next)
 				{
 					return {
 						'size': file.size,
-						'path': (uploadDir + file.name).substr(1)
+						'path': type== "post" ? file.name:(uploadDir + file.name).substr(5)
 					}
 				}
 			)
@@ -320,7 +322,7 @@ function upload(req, res, next)
 function listImages(req, res, next)
 {
 	res.setHeader('Content-Type', 'application/json');
-	res.end(JSON.stringify(  dirTree( cabinDirectory+'/src/images',cabinDirectory ), null, 4) );
+	res.end(JSON.stringify(  dirTree( cabinDirectory+'/src/images',cabinDirectory+'/src' ), null, 4) );
 }
 
 /* LIST POSTS */

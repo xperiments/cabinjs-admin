@@ -1,6 +1,7 @@
 .idea
 admin/node_modules
 admin/bower_components
+admin/.tscache
 npm-debug.log
 
 npm-debug.log
